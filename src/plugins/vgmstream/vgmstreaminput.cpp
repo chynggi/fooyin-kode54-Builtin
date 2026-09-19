@@ -22,9 +22,10 @@
 #include "vgmstreaminputdefs.h"
 
 #include <QDir>
+#include <QLoggingCategory>
 #include <QRegularExpression>
 
-#include <QLoggingCategory>
+#include <algorithm>
 
 Q_LOGGING_CATEGORY(VGMSTREAM_INPUT, "fy.vgmstreaminput")
 
@@ -32,20 +33,54 @@ using namespace Qt::StringLiterals;
 
 namespace {
 
-QStringList fileExtensions()
+void appendExtensions(QStringList& extensions, const char** list, int size)
 {
-    QStringList extensions;
-    int size = 0;
-    const char** list = libvgmstream_get_extensions(&size);
     for(int i = 0; i < size; ++i) {
         extensions.emplace_back(QString::fromLocal8Bit(list[i]));
     }
+}
+
+QStringList fileExtensions(bool includeCommon)
+{
+    QStringList extensions;
+    int size = 0;
+    appendExtensions(extensions, libvgmstream_get_extensions(&size), size);
+
+    // vgmstream keeps mp3/ogg/wav and friends out of the main list, as most
+    // players would rather decode those themselves.
+    if(includeCommon) {
+        size = 0;
+        appendExtensions(extensions, libvgmstream_get_common_extensions(&size), size);
+    }
+
     return extensions;
 }
 
 } // namespace
 
 namespace Fooyin::VGMStreamInput {
+namespace {
+/*! Fills the parts of the vgmstream config that come straight from settings. */
+void applySettings(libvgmstream_config_t& cfg, const FySettings& settings)
+{
+    const auto mode = static_cast<LoopMode>(settings.value(LoopModeKey, DefaultLoopMode).toInt());
+
+    cfg.allow_play_forever = 1;
+    cfg.play_forever       = (mode == LoopMode::Forever);
+    cfg.ignore_loop        = (mode == LoopMode::Ignore);
+
+    double loopCount = settings.value(LoopCount, DefaultLoopCount).toDouble();
+    loopCount        = std::clamp(loopCount, 0.5, 10.0);
+
+    cfg.loop_count = loopCount;
+    cfg.fade_time  = settings.value(FadeLength, DefaultFadeLength).toInt() / 1000.0;
+    cfg.fade_delay = settings.value(FadeDelay, DefaultFadeDelay).toInt() / 1000.0;
+
+    cfg.auto_downmix_channels = settings.value(DownmixChannels, DefaultDownmixChannels).toInt();
+}
+
+} // namespace
+
 VGMStreamDecoder::VGMStreamDecoder()
     : m_vgm{NULL}
     , m_sf{NULL}
@@ -55,7 +90,7 @@ VGMStreamDecoder::VGMStreamDecoder()
 
 QStringList VGMStreamDecoder::extensions() const
 {
-    return fileExtensions();
+    return fileExtensions(m_settings.value(CommonExts, DefaultCommonExts).toBool());
 }
 
 bool VGMStreamDecoder::isSeekable() const
@@ -75,28 +110,20 @@ Fooyin::Track VGMStreamDecoder::changedTrack() const
 
 int VGMStreamDecoder::vgmstream_init()
 {
-    int loopCount = m_settings.value(LoopCount, DefaultLoopCount).toInt();
-    double fadeLength = m_settings.value(FadeLength, DefaultFadeLength).toInt() / 1000.0;
-
-    if(m_options & NoLooping) {
-        loopCount = 1;
-    }
-
-    if(loopCount < 1) {
-        loopCount = 1;
-    } else if(loopCount > 10) {
-        loopCount = 10;
-    }
-
     libvgmstream_config_t vcfg = { 0 };
 
-    vcfg.allow_play_forever = 1;
-    vcfg.play_forever = m_repeatTrack;
-    vcfg.loop_count = loopCount;
-    vcfg.fade_time = fadeLength;
-    vcfg.fade_delay = 0;
-    vcfg.ignore_loop = 0;
-    vcfg.auto_downmix_channels = 6;
+    applySettings(vcfg, m_settings);
+
+    if(m_repeatTrack) {
+        vcfg.play_forever = 1;
+    }
+
+    // Set when converting, scanning for ReplayGain and so on, where an endless
+    // stream would never finish.
+    if(m_options & NoLooping) {
+        vcfg.allow_play_forever = 0;
+        vcfg.play_forever       = 0;
+    }
 
     m_sf = libstreamfile_open_from_stdio(m_path.toUtf8().constData());
     if(!m_sf)
@@ -290,7 +317,7 @@ VGMStreamReader::~VGMStreamReader()
 
 QStringList VGMStreamReader::extensions() const
 {
-    return fileExtensions();
+    return fileExtensions(m_settings.value(CommonExts, DefaultCommonExts).toBool());
 }
 
 bool VGMStreamReader::canReadCover() const
@@ -312,26 +339,13 @@ bool VGMStreamReader::init(const AudioSource& source)
 {
     m_path = source.filepath;
 
-    const FySettings settings;
-
-    int loopCount = m_settings.value(LoopCount, DefaultLoopCount).toInt();
-    double fadeLength = m_settings.value(FadeLength, DefaultFadeLength).toInt() / 1000.0;
-
-    if(loopCount < 1) {
-        loopCount = 1;
-    } else if(loopCount > 10) {
-        loopCount = 10;
-    }
-
     m_vcfg = { 0 };
 
-    m_vcfg.allow_play_forever = 1;
-    m_vcfg.play_forever = 0;
-    m_vcfg.loop_count = loopCount;
-    m_vcfg.fade_time = fadeLength;
-    m_vcfg.fade_delay = 0;
-    m_vcfg.ignore_loop = 0;
-    m_vcfg.auto_downmix_channels = 6;
+    applySettings(m_vcfg, m_settings);
+
+    // Reported durations must be finite, so never loop forever while scanning.
+    m_vcfg.allow_play_forever = 0;
+    m_vcfg.play_forever       = 0;
 
     m_sf = libstreamfile_open_from_stdio(m_path.toUtf8().constData());
     if(!m_sf)
@@ -342,6 +356,11 @@ bool VGMStreamReader::init(const AudioSource& source)
         libstreamfile_close(m_sf);
         m_sf = NULL;
         return {};
+    }
+
+    if(m_settings.value(DisableSubsongs, DefaultDisableSubsongs).toBool()) {
+        m_subsongCount = 1;
+        return true;
     }
 
     m_subsongCount = m_vgm->format->subsong_count;
@@ -396,6 +415,10 @@ bool VGMStreamReader::readTrack(const Fooyin::AudioSource& source, Fooyin::Track
         uint64_t samples = m_vgm->format->play_samples;
         samples = samples * 1000 / m_vgm->format->sample_rate;
         track.setDuration(samples);
+    }
+
+    if(m_settings.value(DisableTagfile, DefaultDisableTagfile).toBool()) {
+        return true;
     }
 
     QFileInfo fileInfo(m_path);

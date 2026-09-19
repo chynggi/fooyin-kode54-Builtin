@@ -20,9 +20,29 @@
 #pragma once
 
 namespace Fooyin::VGMStreamInput {
-constexpr auto DefaultLoopCount     = 2;
-constexpr auto LoopCount            = "VGMStreamInput/LoopCount";     
-constexpr auto DefaultFadeLength    = 4000;
-constexpr auto FadeLength           = "VGMStreamInput/FadeLength";
+/*! Mirrors the loop radio buttons of the foobar2000 component. */
+enum class LoopMode
+{
+    Normal = 0, //!< Play loop_count loops, then fade.
+    Forever,    //!< Keep looping; only meaningful for files with loop points.
+    Ignore,     //!< Ignore loop points and play the stream once.
+};
+
+constexpr auto DefaultLoopMode        = static_cast<int>(LoopMode::Normal);
+constexpr auto LoopModeKey            = "VGMStreamInput/LoopMode";
+constexpr auto DefaultLoopCount       = 2.0;
+constexpr auto LoopCount              = "VGMStreamInput/LoopCount";
+constexpr auto DefaultFadeLength      = 4000;
+constexpr auto FadeLength             = "VGMStreamInput/FadeLength";
+constexpr auto DefaultFadeDelay       = 0;
+constexpr auto FadeDelay              = "VGMStreamInput/FadeDelay";
+constexpr auto DefaultDownmixChannels = 0;
+constexpr auto DownmixChannels        = "VGMStreamInput/DownmixChannels";
+constexpr auto DefaultDisableSubsongs = false;
+constexpr auto DisableSubsongs        = "VGMStreamInput/DisableSubsongs";
+constexpr auto DefaultDisableTagfile  = false;
+constexpr auto DisableTagfile         = "VGMStreamInput/DisableTagfile";
+constexpr auto DefaultCommonExts      = false;
+constexpr auto CommonExts             = "VGMStreamInput/CommonExtensions";
 
 } // namespace Fooyin::VGMStreamInput

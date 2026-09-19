@@ -5,10 +5,10 @@
 
 #include "MIDIPlayer.h"
 
-//const uint8_t syx_reset_gm[] = { 0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7 };
-extern const uint8_t syx_reset_gm[6];
+// SpessaSynth exported syx_reset_gm until it was replaced by syx_reset_gs in
+// 402b2a0, so keep our own copy and take syx_reset_gs from the library.
+const uint8_t syx_reset_gm[] = { 0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7 };
 const uint8_t syx_reset_gm2[] = { 0xF0, 0x7E, 0x7F, 0x09, 0x03, 0xF7 };
-// Defined by SpessaSynth's sequencer, same as syx_reset_gm above.
 extern const uint8_t syx_reset_gs[11];
 const uint8_t syx_reset_xg[] = { 0xF0, 0x43, 0x10, 0x4C, 0x00, 0x00, 0x7E, 0x00, 0xF7 };
 

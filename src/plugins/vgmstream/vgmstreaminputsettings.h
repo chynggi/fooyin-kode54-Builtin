@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class QCheckBox;
+class QRadioButton;
 class QSpinBox;
 class QDoubleSpinBox;
 
@@ -39,7 +40,15 @@ public:
 
 private:
     FySettings m_settings;
-    QSpinBox* m_loopCount;
+    QRadioButton* m_loopNormally;
+    QRadioButton* m_loopForever;
+    QRadioButton* m_ignoreLoop;
+    QDoubleSpinBox* m_loopCount;
     QSpinBox* m_fadeLength;
+    QSpinBox* m_fadeDelay;
+    QSpinBox* m_downmixChannels;
+    QCheckBox* m_disableSubsongs;
+    QCheckBox* m_disableTagfile;
+    QCheckBox* m_commonExts;
 };
 } // namespace Fooyin::VGMStreamInput
