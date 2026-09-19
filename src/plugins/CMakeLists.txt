@@ -11,6 +11,7 @@ set(FOOYIN_KNOWN_PLUGINS
     libarchive
     lyrics
     mediacontrol
+    midi
     mpris
     notify
     oscilloscope
@@ -34,9 +35,11 @@ set(FOOYIN_KNOWN_PLUGINS
     soxresampler
     tageditor
     thumbnailtoolbar
+    vgmstream
     vumeter
     wasapi
     wavebar
+    xsf
 )
 
 set(FOOYIN_DEFAULT_PLUGINS
@@ -47,6 +50,7 @@ set(FOOYIN_DEFAULT_PLUGINS
     globalhotkeys
     libarchive
     lyrics
+    midi
     oscilloscope
     openmpt
     pipewire
@@ -65,8 +69,10 @@ set(FOOYIN_DEFAULT_PLUGINS
     soundtouch
     soxresampler
     tageditor
+    vgmstream
     vumeter
     wavebar
+    xsf
 )
 
 if(BUILD_ALSA)
@@ -138,6 +144,7 @@ fooyin_add_selected_plugin(gme)
 fooyin_add_selected_plugin(globalhotkeys)
 fooyin_add_selected_plugin(libarchive)
 fooyin_add_selected_plugin(lyrics)
+fooyin_add_selected_plugin(midi)
 fooyin_add_selected_plugin(oscilloscope)
 fooyin_add_selected_plugin(openmpt)
 fooyin_add_selected_plugin(pipewire)
@@ -157,8 +164,10 @@ fooyin_add_selected_plugin(spectrogram)
 fooyin_add_selected_plugin(soundtouch)
 fooyin_add_selected_plugin(soxresampler)
 fooyin_add_selected_plugin(tageditor)
+fooyin_add_selected_plugin(vgmstream)
 fooyin_add_selected_plugin(vumeter)
 fooyin_add_selected_plugin(wavebar)
+fooyin_add_selected_plugin(xsf)
 
 if(WIN32)
     fooyin_add_selected_plugin(wasapi)

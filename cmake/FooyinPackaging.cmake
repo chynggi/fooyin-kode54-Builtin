@@ -92,7 +92,14 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS
     libsndfile1,
     libebur128-1,
     libsoundtouch1,
-    libsoxr0"
+    libsoxr0,
+    libmpg123-0t64,
+    libvorbis0a,
+    libvorbisfile3,
+    libvorbisenc2,
+    libspeex1,
+    libflac14,
+    libogg0"
 )
 
 set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")

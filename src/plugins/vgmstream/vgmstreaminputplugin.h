@@ -1,0 +1,41 @@
+/*
+ * VGMStream Plugin
+ * Copyright 2025, Christopher Snowhill <kode54@gmail.com>
+ *
+ * The program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * The program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with the program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#pragma once
+
+#include <core/engine/inputplugin.h>
+#include <core/plugins/plugin.h>
+#include <gui/plugins/pluginconfigguiplugin.h>
+
+namespace Fooyin::VGMStreamInput {
+class VGMStreamInputPlugin : public QObject,
+                       public Fooyin::Plugin,
+                       public Fooyin::InputPlugin,
+                       public Fooyin::PluginConfigGuiPlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.fooyin.fooyin.plugin/1.0" FILE "vgmstreaminput.json")
+    Q_INTERFACES(Fooyin::Plugin Fooyin::InputPlugin Fooyin::PluginConfigGuiPlugin)
+
+public:
+    [[nodiscard]] QString inputName() const override;
+    [[nodiscard]] Fooyin::InputCreator inputCreator() const override;
+    [[nodiscard]] std::unique_ptr<Fooyin::PluginSettingsProvider> settingsProvider() const override;
+};
+}

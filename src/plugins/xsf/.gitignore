@@ -1,0 +1,4 @@
+# Vendored emulator sources: keep them verbatim despite the top-level ignores.
+!Makefile*
+!*.o
+!*.obj
