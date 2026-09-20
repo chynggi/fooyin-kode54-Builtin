@@ -43,14 +43,19 @@ void appendExtensions(QStringList& extensions, const char** list, int size)
 QStringList fileExtensions(bool includeCommon)
 {
     QStringList extensions;
-    int size = 0;
-    appendExtensions(extensions, libvgmstream_get_extensions(&size), size);
+
+    // Keep the call and the count it writes in separate statements: passing
+    // both to appendExtensions leaves the read of size unsequenced.
+    int size          = 0;
+    const char** list = libvgmstream_get_extensions(&size);
+    appendExtensions(extensions, list, size);
 
     // vgmstream keeps mp3/ogg/wav and friends out of the main list, as most
     // players would rather decode those themselves.
     if(includeCommon) {
         size = 0;
-        appendExtensions(extensions, libvgmstream_get_common_extensions(&size), size);
+        list = libvgmstream_get_common_extensions(&size);
+        appendExtensions(extensions, list, size);
     }
 
     return extensions;
